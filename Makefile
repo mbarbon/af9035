@@ -2,10 +2,14 @@
 # License: GPL
 
 SOURCEDIR := $(PWD)
+KSRC = /usr/src/linux-source-`uname -r`
 KDIR = /usr/src/linux-headers-`uname -r`
 KINS = /lib/modules
 
-EXTRA_CFLAGS += -I$(SOURCEDIR)/include/ \
+EXTRA_CFLAGS += -I$(KSRC)/drivers/media/dvb/dvb-usb/ \
+                -I$(KSRC)/drivers/media/dvb/dvb-core/ \
+                -I$(KSRC)/drivers/media/dvb/frontends/ \
+                -I$(KSRC)/drivers/media/common/tuners \
                 -DDETACHED_TERRATEC_MODULES \
                 -I$(KDIR)/drivers/media/dvb/dvb-usb/ \
                 -I$(KDIR)/drivers/media/dvb/dvb-core/ \

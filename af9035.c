@@ -25,6 +25,7 @@
  */
 
 #include "dvb-usb-ids.h"
+#include "dvb-extra-ids.h"
 #include "af9035.h"
 #include "af9033.h"
 #include "tua9001.h"
@@ -726,13 +727,13 @@ static int af9035_read_config(struct usb_device *udev)
 	for (i = 0; i < af9035_properties_count; i++) {
 		/* USB1.1 set smaller buffersize and disable 2nd adapter */
 		if (udev->speed == USB_SPEED_FULL) {
-			af9035_properties[i].adapter[0].stream.u.bulk.buffersize
+			af9035_properties[i].adapter[0].fe[0].stream.u.bulk.buffersize
 				= TS_USB11_MAX_PACKET_SIZE;
 			/* disable 2nd adapter because we don't have
 			   PID-filters */
 			af9035_config.dual_mode = 0;
 		} else {
-			af9035_properties[i].adapter[0].stream.u.bulk.buffersize
+			af9035_properties[i].adapter[0].fe[0].stream.u.bulk.buffersize
 				= TS_USB20_FRAME_SIZE;
 		}
 	}
@@ -936,10 +937,10 @@ static int af9035_identify_state(struct usb_device *udev,
 static int af9035_af9033_frontend_attach(struct dvb_usb_adapter *adap)
 {
 	/* attach demodulator */
-	adap->fe = dvb_attach(af9033_attach, &af9035_af9033_config[adap->id],
+	adap->fe_adap->fe = dvb_attach(af9033_attach, &af9035_af9033_config[adap->id],
 		&adap->dev->i2c_adap);
 
-	return adap->fe == NULL ? -ENODEV : 0;
+	return adap->fe_adap->fe == NULL ? -ENODEV : 0;
 }
 
 static struct tua9001_config af9035_tua9001_config[] = {
@@ -1010,7 +1011,7 @@ static int af9035_tuner_attach(struct dvb_usb_adapter *adap)
 				 reg_top_gpiot2_o_pos, reg_top_gpiot2_o_len, 1);
 		}
 
-		ret = dvb_attach(tua9001_attach, adap->fe, &adap->dev->i2c_adap,
+		ret = dvb_attach(tua9001_attach, adap->fe_adap->fe, &adap->dev->i2c_adap,
 			&af9035_tua9001_config[adap->id]) == NULL ? -ENODEV : 0;
 
 		break;
@@ -1063,7 +1064,7 @@ static int af9035_tuner_attach(struct dvb_usb_adapter *adap)
 				1);
 		}
 
-		ret = dvb_attach(mxl5007t_attach, adap->fe, &adap->dev->i2c_adap,
+		ret = dvb_attach(mxl5007t_attach, adap->fe_adap->fe, &adap->dev->i2c_adap,
 			af9035_af9033_config[adap->id].tuner_address,
 			&af9035_mxl5007t_config[adap->id]) == NULL ? -ENODEV : 0;
 
@@ -1099,7 +1100,7 @@ static int af9035_tuner_attach(struct dvb_usb_adapter *adap)
                            reg_top_gpiot2_o_pos, reg_top_gpiot2_o_len, 1);
                    }
 
-                   ret = dvb_attach(tuner_tda18218_attach, adap->fe, &adap->dev->i2c_adap,
+                   ret = dvb_attach(tuner_tda18218_attach, adap->fe_adap->fe, &adap->dev->i2c_adap,
                            &af9035_tda18218_config) == NULL ? -ENODEV : 0;
                    break;
 	default:
@@ -1142,6 +1143,8 @@ static struct dvb_usb_device_properties af9035_properties[] = {
 
 		.adapter = {
 			{
+                        .num_frontends = 1,
+                        .fe = {{
 				.frontend_attach =
 					af9035_af9033_frontend_attach,
 				.tuner_attach = af9035_tuner_attach,
@@ -1150,8 +1153,11 @@ static struct dvb_usb_device_properties af9035_properties[] = {
 					.count = 4,
 					.endpoint = 0x84,
 				},
+			}},
 			},
 			{
+                        .num_frontends = 1,
+                        .fe = {{
 				.frontend_attach =
 					af9035_af9033_frontend_attach,
 				.tuner_attach = af9035_tuner_attach,
@@ -1166,6 +1172,7 @@ static struct dvb_usb_device_properties af9035_properties[] = {
 						}
 					}
 				},
+			}},
 			}
 		},
 
